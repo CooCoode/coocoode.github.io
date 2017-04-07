@@ -1,0 +1,33 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"><meta name="format-detection" content="telephone=no"><meta name="format-detection" content="email=no"><meta name="description"><meta name="keywords" content="CooCoode"><title>Installing-k8s-on-ubuntu - CooCoode's Blog</title><link rel="stylesheet" href="/css/main_style.min.css"><link rel="icon" href="/favicon.ico"></head><body><div class="post-header"><img class="background" src="/default_images/post_background.jpg"><div class="post-title"><h1 class="title">Installing-k8s-on-ubuntu</h1><ul class="meta"><li><i class="icon icon-author"></i>CooCoode</li><li><i class="icon icon-clock"></i>3 Minutes</li><li><i class="icon icon-calendar"></i>April 7, 2017</li></ul></div></div><div class="article-content" style="max-width:600px"><ul>
+<li>容器</li>
+</ul>
+<h2 id="tags"><a href="#tags" class="headerlink" title="tags:"></a>tags:</h2><ul>
+<li><p>k8s</p>
+</li>
+<li><p>kubeneter</p>
+</li>
+</ul>
+<p>kubernetes v1.6.1部署：</p>
+<p>1、按照官方文档中installing kubernetes on linux with kubeadm的安装步骤下载docker、kubelet、kubectl、kubeadm</p>
+<p>2、然后kubeadm init –pod-network-cidr 10.244.0.0/16初始化master，这里需要docker pull很多镜像会访问墙外，建议使用ss来代理一下，或者上国内的镜像找找有没有事先pull下来，pod-network-cidr参数是选择flannel作为网络插件时必选的值也是这个不用改变</p>
+<p>3、在使用kubectl是必须按照init出来后中的 To start using your cluster的提示执行相关脚本才可以使用</p>
+<p>4、然后开始启动flannel，这里因为apiServer使用了RBAC，所以在执行<br><figure class="highlight plain"><figcaption><span>create -f kube-flannel.yml```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">之前，得先执行```kubectl create -f kube-flannel-rbac.yml```，这两个文件可以在github的flannel下找到。</div><div class="line"></div><div class="line">5、现在使用kubectl get nodes查看机器状态，如果需要master也是作为node允许部署pod的话需要执行下面的脚本</div><div class="line"></div><div class="line">```kubectl taint nodes --all node-role.kubernetes.io/master-</div></pre></td></tr></table></figure></p>
+<p>6、如果需要添加新的node，在新机器上重复第一步然后使用在master init出来的下面的脚本就行了，这样master会自动去启动node，当然这里也会需要墙外环境，最好给docker配置一下代理</p>
+<figure class="highlight plain"><figcaption><span>join --token <token> <master-ip>:<master-port>```</master-port></master-ip></token></span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">7、部署kubernetes dashboard 图形界面 kubernetes-dashboard.yaml 可以在github上找到，执行完下面的脚本之后会自动部署并启动dashboard</div><div class="line"></div><div class="line">```kubectl create -f kubernetes-dashboard.yaml</div></pre></td></tr></table></figure>
+<p>8、访问dashboard会有403，是因为auth验证问题，需要执行下面的脚本命令</p>
+<figure class="highlight plain"><figcaption><span>create clusterrolebinding add-on-cluster-admin \</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">--clusterrole=cluster-admin \</div><div class="line">--serviceaccount=kube-system:default</div></pre></td></tr></table></figure>
+<p>9、然后我们需要配置一下apiServer，在master机器的/etc/kubernetes/manifests/kube-apiserver.yaml中，加入ABAC的auth验证方式跟RBAC方式并存用英文逗号隔开，同时指定参数–authorization-policy-file=SOME_FILENAME对应的文件格式是jsonl，内容是下面的样式</p>
+<figure class="highlight plain"><figcaption><span>"abac.authorization.kubernetes.io/v1beta1", "kind": "Policy", "spec": &#123;"group":"*", "readonly":false, "nonResourcePath":"*", "user": "anansiadmin", "namespace": "*", "resource": "*", "apiGroup": "*"&#125;&#125;```</span></figcaption><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">接着指定参数--basic-auth-file=SOMEFILE对应文件格式是csv，内容是下面的样式第四列可选</div><div class="line"></div><div class="line">```password,user,uid,&quot;group1,group2,group3&quot;</div></pre></td></tr></table></figure>
+<p>保存，这时候k8s会自动重启apiServer，如果没有成功就在打开一遍文件重新保存一下并退出</p>
+<p>10、apiServer重启之后，我们就可以使用https://<kubernetes-master>/ui这样的方式来访问dashboard了，如果碰到证书问题直接继续就行，然后会跳出登录，输入用户名密码就可以了</kubernetes-master></p>
+<p>11、到这整个k8s就搭建完了。如果需要加新节点重复步骤6就可以，master会自动初始化机器</p>
+</div><div class="article-meta" style="max-width:600px"></div><div class="article-comment" style="max-width:600px"><div class="ds-thread" id="ds-thread" data-thread-key="cj17pgauj0000bnfyf703e77d" data-title="Installing-k8s-on-ubuntu" data-url="http://coocoode.github.io/2017/04/07/Installing-k8s-on-ubuntu/" site-name="ueibo"></div><script>var siteName = document.getElementById('ds-thread').getAttribute('site-name');
+var duoshuoQuery = {short_name: siteName};
+(function() {
+  var ds = document.createElement('script');
+  ds.type = 'text/javascript';ds.async = true;
+  ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+  ds.charset = 'UTF-8';
+  (document.getElementsByTagName('head')[0] 
+  || document.getElementsByTagName('body')[0]).appendChild(ds);
+})();</script></div><ul class="navication"><li class="home"><a href="/"><i class="icon icon-home"></i></a></li><li><a href="/2017/02/07/Welcome-to-CooCoode-s-blog/"><i class="icon icon-arror-right"></i></a></li></ul><div class="page-footer"><div class="top"><ul class="social"><li><a href="https://github.com/CooCoode" title="GitHub" target="_blank"><i class="icon icon-github"></i></a></li></ul></div><div class="bottom"><p class="copyright">© 2017 CooCoode's Blog</p></div></div></body></html>
