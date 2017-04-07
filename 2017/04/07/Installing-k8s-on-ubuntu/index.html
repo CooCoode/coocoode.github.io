@@ -26,7 +26,7 @@
 <p>接着指定参数–basic-auth-file=SOMEFILE对应文件格式是csv，内容是下面的样式第四列可选</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">password,user,uid,&quot;group1,group2,group3&quot;</div></pre></td></tr></table></figure>
 <p>保存，这时候k8s会自动重启apiServer，如果没有成功就在打开一遍文件重新保存一下并退出</p>
-<p>10、apiServer重启之后，我们就可以使用https://<kubernetes-master>/ui这样的方式来访问dashboard了，如果碰到证书问题直接继续就行，然后会跳出登录，输入用户名密码就可以了</kubernetes-master></p>
+<p>10、apiServer重启之后，我们就可以使用<a href="https://master的IP:master的Port/ui这样的方式来访问dashboard了，如果碰到证书问题直接继续就行，然后会跳出登录，输入用户名密码就可以了" target="_blank" rel="external">https://master的IP:master的Port/ui这样的方式来访问dashboard了，如果碰到证书问题直接继续就行，然后会跳出登录，输入用户名密码就可以了</a></p>
 <p>11、到这整个k8s就搭建完了。如果需要加新节点重复步骤6就可以，master会自动初始化机器</p>
 </div><div class="article-meta" style="max-width:600px"></div><div class="article-comment" style="max-width:600px"><div class="ds-thread" id="ds-thread" data-thread-key="cj17pgauj0000bnfyf703e77d" data-title="Installing-k8s-on-ubuntu" data-url="http://coocoode.github.io/2017/04/07/Installing-k8s-on-ubuntu/" site-name="ueibo"></div><script>var siteName = document.getElementById('ds-thread').getAttribute('site-name');
 var duoshuoQuery = {short_name: siteName};
